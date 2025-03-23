@@ -24,7 +24,7 @@ try:
     logger.info("Attempting to import app_vercel.py...")
     from app_vercel import app
     logger.info("Successfully imported app_vercel.py")
-    # Use the imported app
+    # Use the imported app - this should now show the login page
     application = app
 except ImportError as e:
     logger.error("Error importing app_vercel: %s", e)
@@ -40,20 +40,31 @@ except ImportError as e:
         logger.info("Falling back to basic Flask app")
         
         # Create a basic Flask app as fallback
-        application = Flask(__name__)
+        application = Flask(__name__, 
+                          template_folder='app/templates',
+                          static_folder='app/static')
         
         @application.route('/')
         def home():
-            return "Flask is working! This is a test route from the fallback app."
+            try:
+                return render_template('login.html')
+            except Exception as e:
+                return f"Error rendering login template: {str(e)}<br>Path: {application.template_folder}"
         
         @application.route('/debug')
         def debug():
             # Return debug information
+            template_folder_exists = os.path.exists(application.template_folder) if application.template_folder else False
+            template_files = os.listdir(application.template_folder) if template_folder_exists else []
+            
             debug_info = {
                 "python_version": sys.version,
                 "cwd": os.getcwd(),
                 "directory_contents": os.listdir("."),
                 "python_path": str(sys.path),
+                "template_folder": application.template_folder,
+                "template_folder_exists": template_folder_exists,
+                "template_files": template_files,
                 "environment_variables": {k: v for k, v in os.environ.items() if not k.startswith("AWS_")}
             }
             return jsonify(debug_info)
