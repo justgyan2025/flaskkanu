@@ -17,7 +17,28 @@ load_dotenv()
 app = Flask(__name__, 
             template_folder='app/templates',
             static_folder='app/static')
-app.secret_key = os.urandom(24)
+
+# Use a fixed secret key for production
+secret_key = os.getenv("SECRET_KEY")
+if not secret_key:
+    secret_key = os.urandom(24)
+app.secret_key = secret_key
+
+# Check if Firebase environment variables are set
+required_env_vars = [
+    "FIREBASE_API_KEY",
+    "FIREBASE_AUTH_DOMAIN",
+    "FIREBASE_PROJECT_ID",
+    "FIREBASE_STORAGE_BUCKET",
+    "FIREBASE_MESSAGING_SENDER_ID",
+    "FIREBASE_APP_ID",
+    "FIREBASE_DATABASE_URL"
+]
+
+missing_vars = [var for var in required_env_vars if not os.getenv(var)]
+if missing_vars:
+    print(f"ERROR: Missing required environment variables: {', '.join(missing_vars)}")
+    print("Please set these variables in your Vercel project settings.")
 
 # Firebase configuration
 firebase_config = {
